@@ -15,14 +15,20 @@ Cách chạy (cùng thư mục với weather_server.py, client tự khởi độ
 
 import asyncio
 import sys
+from pathlib import Path
+
+# Đảm bảo in tiếng Việt / emoji trên Windows terminal không bị lỗi charmap
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 
 async def main() -> None:
-    # Dùng đúng interpreter đang chạy client (tránh lỗi "python" không tồn tại)
-    params = StdioServerParameters(command=sys.executable, args=["weather_server.py"])
+    # Dùng đúng interpreter đang chạy client và đúng đường dẫn server
+    server_path = str(Path(__file__).parent / "weather_server.py")
+    params = StdioServerParameters(command=sys.executable, args=[server_path])
 
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
@@ -35,7 +41,7 @@ async def main() -> None:
                 print(f"  - {t.name}: {t.description}")
 
             # 2. Gọi tool — SERVER thực thi rồi trả kết quả về qua MCP
-            for city in ["Hanoi", "Danang", "Haiphong"]:
+            for city in ["Hanoi", "Danang", "Haiphong", "Tokyo"]:
                 result = await session.call_tool("get_weather", {"city": city})
                 print(f"\ncall_tool get_weather(city={city!r}):")
                 print("  ->", result.content[0].text)
